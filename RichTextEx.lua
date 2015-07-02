@@ -18,10 +18,11 @@
 基本选项是
 	<#F00> = <#FF0000> 	= 文字颜色
 	<32>				= 字体大小
+	<font Arial>		= 文字字体 支持TTF
 	<img filename>		= 图片（filename 可以是已经在 SpriteFrameCache 里的 key，或磁盘文件）
 	<img_32*32 fname> 	= 指定大小的图片
 	<+2> <-2> <*2> </2> = 当前字体大小 +-*/
-	<!>					= 颜色和字体大小恢复默认
+	<!>					= 颜色、字体和字体大小恢复默认
 	\n \t 				= 换行 和 tab，可能暂时实现得不是很好
 	
 示例选项是 (在 RichTextEx.defaultCb 中提供)
@@ -248,7 +249,7 @@ function _M:setText(text, callback)
 		if c == P_BEG then	-- <
 			if (not b) and (i > p) then
 				str = str_sub(text, p, i - 1)
-				obj = ccui.RichElementText:create(0, self._textColor, 255, str_fix(str), self.font, self._fontSize)
+				obj = ccui.RichElementText:create(0, self._textColor, 255, str_fix(str), self._textFont, self._fontSize)
 				self:pushBackElement(obj)
 				self._elements[#self._elements + 1] = obj
 			end
@@ -266,6 +267,7 @@ function _M:setText(text, callback)
 						elseif chr == C_RST and #str == 1 then	-- reset
 							self._textColor = self._textColorDef
 							self._fontSize  = self._fontSizeDef
+							self._textFont  = "" 
 						elseif (chr == C_INC or chr == C_DEC or chr == C_MUL or chr == C_DIV)
 								and tonumber(str_sub(str, 2)) then
 							local v = tonumber(str_sub(str, 2)) or 0
@@ -280,6 +282,8 @@ function _M:setText(text, callback)
 							end
 						elseif tonumber(str) then	-- fontSize
 							self._fontSize = tonumber(str)
+						elseif str_sub(str, 1, 5) == "font " or str_sub(str, 1, 5) == "font_" then
+							self._textFont = str_trim(str_sub(str, 5, i - 1))
 						elseif str_sub(str, 1, 4) == "img " or str_sub(str, 1, 4) == "img_" then
 							self:addCustomNode(self.defaultImgCb(str_trim(str_sub(str, 4, i - 1))))
 						elseif self._callback then
@@ -296,7 +300,7 @@ function _M:setText(text, callback)
 		elseif c == C_LN or c == C_TAB then
 			if (not b) and (i > p) then
 				str = str_sub(text, p, i - 1)
-				obj = ccui.RichElementText:create(0, self._textColor, 255, str_fix(str), self.font, self._fontSize)
+				obj = ccui.RichElementText:create(0, self._textColor, 255, str_fix(str), self._textFont, self._fontSize)
 				self:pushBackElement(obj)
 				self._elements[#self._elements + 1] = obj
 			end
@@ -318,18 +322,18 @@ function _M:setText(text, callback)
 
 	if (not b) and (p <= len) then
 		str = str_sub(text, p)
-		obj = ccui.RichElementText:create(0, self._textColor, 255, str_fix(str), self.font, self._fontSize)
+		obj = ccui.RichElementText:create(0, self._textColor, 255, str_fix(str), self._textFont, self._fontSize)
 		self:pushBackElement(obj)
 		self._elements[#self._elements + 1] = obj
 	end
 
 	return self
 end
-function _M:setFont(font)
-	self.font = font
+function _M:setDefaultFont(font)
+	self._textFont = font
 end
 function _M:create(...)
-	self.font = ""
+	self._textFont = ""
 	local richTextEx = _M.new(...)
     return richTextEx
 end
